@@ -18,6 +18,11 @@ VideoPlayer::VideoPlayer(VideoSource *videoSource, Display &display)
 void VideoPlayer::start()
 {
   mVideoSource->start();
+}
+
+void VideoPlayer::playTask()
+{
+  m_runTask = true;
   // launch the frame player task
   xTaskCreatePinnedToCore(
       _framePlayerTask,
@@ -25,21 +30,35 @@ void VideoPlayer::start()
       10000,
       this,
       1,
-      NULL,
+      &_framePlayerTaskHandle,
       0);
 }
 
 void VideoPlayer::setChannel(int channel)
 {
+  m_runTask = false;
+  // wait for the task to stop
+  while (_framePlayerTaskHandle != NULL)
+  {
+    vTaskDelay(10);
+  }
   mChannelVisible = millis();
   // update the video source
   mVideoSource->setChannel(channel);
+  playTask();
 }
 
 void VideoPlayer::nextChannel()
 {
+  m_runTask = false;
+  // wait for the task to stop
+  while (_framePlayerTaskHandle != NULL)
+  {
+    vTaskDelay(10);
+  }
   mChannelVisible = millis();
   mVideoSource->nextChannel();
+  playTask();
 }
 
 void VideoPlayer::play()
@@ -50,6 +69,10 @@ void VideoPlayer::play()
   }
   mState = VideoPlayerState::PLAYING;
   mVideoSource->setState(VideoPlayerState::PLAYING);
+  if (_framePlayerTaskHandle == NULL)
+  {
+    playTask();
+  }
 }
 
 void VideoPlayer::stop()
@@ -57,6 +80,12 @@ void VideoPlayer::stop()
   if (mState == VideoPlayerState::STOPPED)
   {
     return;
+  }
+  m_runTask = false;
+  // wait for the task to stop
+  while (_framePlayerTaskHandle != NULL)
+  {
+    vTaskDelay(10);
   }
   mState = VideoPlayerState::STOPPED;
   mVideoSource->setState(VideoPlayerState::STOPPED);
@@ -73,14 +102,42 @@ void VideoPlayer::pause()
   mVideoSource->setState(VideoPlayerState::PAUSED);
 }
 
+void VideoPlayer::playPauseToggle()
+{
+  if (mState == VideoPlayerState::PLAYING)
+  {
+    pause();
+  }
+  else
+  {
+    play();
+  }
+}
+
 void VideoPlayer::playStatic()
 {
   if (mState == VideoPlayerState::STATIC)
   {
     return;
   }
+
+  // If a task is running, stop it cleanly
+  if (_framePlayerTaskHandle != NULL)
+  {
+    m_runTask = false;
+    while (_framePlayerTaskHandle != NULL)
+    {
+      vTaskDelay(10);
+    }
+  }
+
   mState = VideoPlayerState::STATIC;
   mVideoSource->setState(VideoPlayerState::STATIC);
+
+  mDisplay.fillScreen(DisplayColors::BLACK); // Added to reset display state
+
+  // Start the task in STATIC mode
+  playTask();
 }
 
 
@@ -114,7 +171,7 @@ void VideoPlayer::framePlayerTask()
   size_t jpegLength = 0;
   // used for calculating frame rate
   std::list<int> frameTimes;
-  while (true)
+  while (m_runTask)
   {
     if (mState == VideoPlayerState::STOPPED || mState == VideoPlayerState::PAUSED)
     {
@@ -135,6 +192,10 @@ void VideoPlayer::framePlayerTask()
       mDisplay.startWrite();
       for (int i = 0; i < mDisplay.height(); i++)
       {
+        if (!m_runTask)
+        {
+          break;
+        }
         for (int p = 0; p < width * height; p++)
         {
           int grey = xorshift16() >> 8;
@@ -179,4 +240,11 @@ void VideoPlayer::framePlayerTask()
     #endif
     mDisplay.endWrite();
   }
+  // clean up
+  if (staticBuffer != NULL)
+  {
+    free(staticBuffer);
+  }
+  _framePlayerTaskHandle = NULL;
+  vTaskDelete(NULL);
 }

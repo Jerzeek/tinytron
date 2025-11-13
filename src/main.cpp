@@ -57,8 +57,9 @@ void setup()
     // TODO: Display IP address on screen. For AP mode, display SSID and preset IP.
     Serial.printf("Wifi Connected: %s\n", wifiManager.getIpAddress().toString().c_str());
     display.fillScreen(TFT_BLACK);
-    display.drawText(wifiManager.isAPMode() ? "AP: " AP_SSID :  "WiFi Connected", wifiManager.getIpAddress().toString().c_str());
-    if (!wifiManager.isAPMode()) {
+    display.drawText(wifiManager.isAPMode() ? "AP: " AP_SSID : "WiFi Connected", wifiManager.getIpAddress().toString().c_str());
+    if (!wifiManager.isAPMode())
+    {
       videoSource = new StreamVideoSource(&server);
     }
   }
@@ -106,15 +107,19 @@ void loop()
     {
       if (videoPlayer != nullptr)
       {
-        videoPlayer->playStatic();
-        delay(500);
-        videoPlayer->play();
+        videoPlayer->playPauseToggle();
       }
     }
 
     if (button.isDoubleClicked())
     {
-      // Handle double click
+      if (videoPlayer != nullptr)
+      {
+        // videoPlayer->stop();
+        // videoPlayer->playStatic();
+        // delay(500);
+        videoPlayer->nextChannel();
+      }
     }
   }
 }

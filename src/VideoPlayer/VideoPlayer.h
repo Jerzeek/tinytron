@@ -20,9 +20,13 @@ class VideoPlayer {
     // video source
     VideoSource *mVideoSource = NULL;
 
+    TaskHandle_t _framePlayerTaskHandle = NULL;
+    volatile bool m_runTask = false;
+
     static void _framePlayerTask(void *param);
 
     void framePlayerTask();
+    void playTask();
 
     friend int _doDraw(JPEGDRAW *pDraw);
 
@@ -35,4 +39,5 @@ class VideoPlayer {
     void stop();
     void pause();
     void playStatic();
+    void playPauseToggle();
 };

@@ -13,12 +13,12 @@ private:
   FILE *mFile = NULL;
   long mMoviListPosition = 0;
   long mMoviListLength;
-
-  bool isMoviListChunk(unsigned int chunkSize);
+  float mFrameRate = 0;
 
 public:
   AVIParser(std::string fname, AVIChunkType requiredChunkType);
   ~AVIParser();
   bool open();
   size_t getNextChunk(uint8_t **buffer, size_t &bufferLength);
+  float getFrameRate() { return mFrameRate; };
 };

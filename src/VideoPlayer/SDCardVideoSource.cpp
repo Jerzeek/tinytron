@@ -103,6 +103,18 @@ bool SDCardVideoSource::getVideoFrame(uint8_t **buffer, size_t &bufferLength, si
         vTaskDelay(100 / portTICK_PERIOD_MS);
         return false;
     }
+    // how long should we wait before fetching the next frame?
+    float frameRate = mCurrentChannelVideoParser->getFrameRate();
+    if (frameRate > 0)
+    {
+        float frameTime = 1000.0f / frameRate;
+        long delay = frameTime - (millis() - mLastFrameTime);
+        if (delay > 0)
+        {
+            vTaskDelay(delay / portTICK_PERIOD_MS);
+        }
+    }
+    mLastFrameTime = millis();
     frameLength = mCurrentChannelVideoParser->getNextChunk((uint8_t **)buffer, bufferLength);
     if (frameLength == 0)
     {

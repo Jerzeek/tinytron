@@ -18,6 +18,7 @@ private:
     const char *mAviPath;
     int mFrameCount = 0;
     int mCurrentWsFrameLength = 0;
+    unsigned long mLastFrameTime = 0;
 
 public:
     SDCardVideoSource(SDCard *sdCard, const char *aviPath);

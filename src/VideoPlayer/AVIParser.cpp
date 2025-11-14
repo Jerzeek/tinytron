@@ -32,30 +32,25 @@ AVIParser::~AVIParser()
   }
 }
 
-bool AVIParser::isMoviListChunk(unsigned int chunkSize)
+// http://www.fastgraph.com/help/avi_header_format.html
+typedef struct
 {
-  char listType[4];
-  fread(&listType, 4, 1, mFile);
-  chunkSize -= 4;
-  Serial.printf("LIST type %c%c%c%c\n",
-                listType[0], listType[1],
-                listType[2], listType[3]);
-  // check for the movi list - contains the video frames and audio data
-  if (strncmp(listType, "movi", 4) == 0)
-  {
-    Serial.printf("Found movi list.\n");
-    Serial.printf("List Chunk Length: %d\n", chunkSize);
-    mMoviListPosition = ftell(mFile);
-    mMoviListLength = chunkSize;
-    return true;
-  }
-  else
-  {
-    // skip the rest of the bytes
-    fseek(mFile, chunkSize, SEEK_CUR);
-  }
-  return false;
-}
+  unsigned int dwMicroSecPerFrame;
+  unsigned int dwMaxBytesPerSec;
+  unsigned int dwPaddingGranularity;
+  unsigned int dwFlags;
+  unsigned int dwTotalFrames;
+  unsigned int dwInitialFrames;
+  unsigned int dwStreams;
+  unsigned int dwSuggestedBufferSize;
+  unsigned int dwWidth;
+  unsigned int dwHeight;
+  unsigned int dwScale;
+  unsigned int dwRate;
+  unsigned int dwStart;
+  unsigned int dwLength;
+} MainAVIHeader;
+
 
 bool AVIParser::open()
 {
@@ -76,10 +71,6 @@ bool AVIParser::open()
     mFile = NULL;
     return false;
   }
-  else
-  {
-    Serial.printf("RIFF header found.\n");
-  }
   // next four bytes are the RIFF type which should be 'AVI '
   char riffType[4];
   fread(&riffType, 4, 1, mFile);
@@ -89,10 +80,6 @@ bool AVIParser::open()
     fclose(mFile);
     mFile = NULL;
     return false;
-  }
-  else
-  {
-    Serial.println("RIFF Type is AVI.");
   }
 
   // now read each chunk and find the movi list
@@ -106,18 +93,48 @@ bool AVIParser::open()
     // is it a LIST chunk?
     if (strncmp(header.chunkId, "LIST", 4) == 0)
     {
-      if (isMoviListChunk(header.chunkSize))
+      long listContentPosition = ftell(mFile);
+      char listType[4];
+      fread(&listType, 4, 1, mFile);
+
+      if (strncmp(listType, "hdrl", 4) == 0)
       {
+        // This is the header list, which contains the 'avih' chunk with the frame rate
+        ChunkHeader avihHeader;
+        readChunk(mFile, &avihHeader);
+        if (strncmp(avihHeader.chunkId, "avih", 4) == 0)
+        {
+          MainAVIHeader avih;
+          fread(&avih, sizeof(MainAVIHeader), 1, mFile);
+          mFrameRate = (float)avih.dwRate / avih.dwScale;
+          Serial.printf("Frame rate: %f\n", mFrameRate);
+        }
+        // We've processed what we need from the 'hdrl' list, so skip to the end of it.
+        fseek(mFile, listContentPosition + header.chunkSize, SEEK_SET);
+      }
+      else if (strncmp(listType, "movi", 4) == 0)
+      {
+        // This is the movie list. We've found what we're looking for.
+        Serial.printf("Found movi list.\n");
+        mMoviListPosition = ftell(mFile); // The current position is the start of the movi data
+        mMoviListLength = header.chunkSize - 4;
+        Serial.printf("List Chunk Length: %ld\n", mMoviListLength);
+        // We can stop parsing the file now.
         break;
+      }
+      else
+      {
+        // This is some other kind of LIST chunk that we don't care about. Skip it.
+        fseek(mFile, header.chunkSize - 4, SEEK_CUR);
       }
     }
     else
     {
-      // skip the chunk data bytes
+      // This is not a LIST chunk. Skip it.
       fseek(mFile, header.chunkSize, SEEK_CUR);
     }
   }
-  // did we find the list?
+
   if (mMoviListPosition == 0)
   {
     Serial.printf("Failed to find the movi list.\n");
@@ -125,7 +142,9 @@ bool AVIParser::open()
     mFile = NULL;
     return false;
   }
-  // keep the file open for reading the frames
+
+  // Before we return, we must position the file pointer at the start of the movi data.
+  fseek(mFile, mMoviListPosition, SEEK_SET);
   return true;
 }
 

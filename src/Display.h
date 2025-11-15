@@ -3,6 +3,16 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 
+// position of the OSD text
+enum OSDPosition
+{
+  TOP_LEFT,
+  TOP_RIGHT,
+  BOTTOM_LEFT,
+  BOTTOM_RIGHT,
+  CENTER
+};
+
 class Display
 {
 private:
@@ -19,9 +29,7 @@ public:
   int width();
   int height();
   void fillScreen(uint16_t color);
-  void drawText(const char *textLine1, const char *textLine2 = nullptr);
-  void drawChannel(int channelIndex);
-  void drawFPS(int fps);
+  void drawOSD(const char *text, OSDPosition position);
   void drawSDCardFailed();
   static uint16_t color565(uint8_t r, uint8_t g, uint8_t b)
   {

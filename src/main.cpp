@@ -12,6 +12,8 @@
 #include "Battery.h"
 #include <ESPAsyncWebServer.h>
 
+#define FIRMWARE_VERSION "1.0.0"
+
 #ifndef USE_DMA
 #warning "No DMA - Drawing may be slower"
 #endif
@@ -37,6 +39,11 @@ void setup()
   prefs.onBrightnessChanged([](int brightness)
                             { display.setBrightness(brightness); });
   display.setBrightness(prefs.getBrightness());
+  if (prefs.getOsdLevel() >= 2)
+  {
+    display.drawOSD(FIRMWARE_VERSION, BOTTOM_RIGHT);
+    delay(2000);
+  }
   Serial.printf("Total heap: %d\n", ESP.getHeapSize());
   Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
   Serial.printf("Total PSRAM: %d\n", ESP.getPsramSize());
@@ -74,7 +81,9 @@ void setup()
   {
     videoPlayer = new VideoPlayer(
         videoSource,
-        display);
+        display,
+        prefs,
+        battery);
     videoPlayer->start();
     // get the channel info
     while (!videoSource->fetchChannelData())

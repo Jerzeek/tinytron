@@ -81,24 +81,38 @@ void Display::fillScreen(uint16_t color)
   tft->fillScreen(color);
 }
 
-void Display::drawText(const char *textLine1, const char *textLine2)
+void Display::drawOSD(const char *text, OSDPosition position)
 {
-  tft->setCursor(20, 20);
   tft->setTextColor(TFT_GREEN, TFT_BLACK);
-  tft->println(textLine1);
-  if (textLine2 == nullptr)
+  int x = 0;
+  int y = 0;
+  int textWidth = tft->textWidth(text);
+  int textHeight = tft->fontHeight();
+  switch (position)
   {
-    return;
+  case TOP_LEFT:
+    x = 20;
+    y = 20;
+    break;
+  case TOP_RIGHT:
+    x = width() - textWidth - 20;
+    y = 20;
+    break;
+  case BOTTOM_LEFT:
+    x = 20;
+    y = height() - textHeight - 20;
+    break;
+  case BOTTOM_RIGHT:
+    x = width() - textWidth - 20;
+    y = height() - textHeight - 20;
+    break;
+  case CENTER:
+    x = (width() - textWidth) / 2;
+    y = (height() - textHeight) / 2;
+    break;
   }
-  tft->setCursor(20, 60);
-  tft->println(textLine2);
-}
-
-void Display::drawChannel(int channelIndex)
-{
-  tft->setCursor(20, 20);
-  tft->setTextColor(TFT_GREEN, TFT_BLACK);
-  tft->printf("%d", channelIndex);
+  tft->setCursor(x, y);
+  tft->println(text);
 }
 
 void Display::drawSDCardFailed()
@@ -108,13 +122,5 @@ void Display::drawSDCardFailed()
   tft->setTextColor(TFT_WHITE);
   tft->setTextSize(2);
   tft->println("Failed to mount SD Card");
-}
-
-void Display::drawFPS(int fps)
-{
-  // show the frame rate in the top right
-  tft->setCursor(width() - 50, 20);
-  tft->setTextColor(TFT_GREEN, TFT_BLACK);
-  tft->printf("%d", fps);
 }
 #endif

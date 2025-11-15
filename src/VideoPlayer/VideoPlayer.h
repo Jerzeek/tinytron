@@ -3,9 +3,12 @@
 #include "JPEGDEC.h"
 
 #include "VideoPlayerState.h"
+#include "StreamVideoSource.h"
+
+#include "Battery.h"
 
 class Display;
-
+class Prefs;
 class VideoSource;
 
 class VideoPlayer {
@@ -16,6 +19,8 @@ class VideoPlayer {
     // video playing
     Display &mDisplay;
     JPEGDEC mJpeg;
+    Prefs &mPrefs;
+    Battery &mBattery;
 
     // video source
     VideoSource *mVideoSource = NULL;
@@ -27,11 +32,12 @@ class VideoPlayer {
 
     void framePlayerTask();
     void playTask();
+    void drawOSD(int fps);
 
     friend int _doDraw(JPEGDRAW *pDraw);
 
   public:
-    VideoPlayer(VideoSource *videoSource, Display &display);
+    VideoPlayer(VideoSource *videoSource, Display &display, Prefs &prefs, Battery &battery);
     void setChannel(int channelIndex);
     void nextChannel();
     void start();

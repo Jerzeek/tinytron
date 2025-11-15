@@ -43,5 +43,13 @@ class StreamVideoSource: public VideoSource {
     void nextChannel();
     int getChannelCount();
     int getChannelNumber();
+    StreamState getStreamState()
+    {
+        return mStreamState;
+    }
+    const char *getSourceType()
+    {
+        return "Stream";
+    }
     bool fetchChannelData();
 };

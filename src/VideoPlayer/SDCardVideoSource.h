@@ -36,4 +36,8 @@ public:
     bool getVideoFrame(uint8_t **buffer, size_t &bufferLength, size_t &frameLength);
     void setChannel(int channel);
     void nextChannel();
+    const char *getSourceType()
+    {
+        return "SD Card";
+    }
 };

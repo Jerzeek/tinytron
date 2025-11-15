@@ -2,6 +2,7 @@
 #include "VideoPlayer.h"
 #include "VideoSource.h"
 #include "Display.h"
+#include "Prefs.h"
 #include <list>
 
 void VideoPlayer::_framePlayerTask(void *param)
@@ -10,8 +11,8 @@ void VideoPlayer::_framePlayerTask(void *param)
   player->framePlayerTask();
 }
 
-VideoPlayer::VideoPlayer(VideoSource *videoSource, Display &display)
-: mVideoSource(videoSource), mDisplay(display), mState(VideoPlayerState::STOPPED)
+VideoPlayer::VideoPlayer(VideoSource *videoSource, Display &display, Prefs &prefs, Battery &battery)
+    : mVideoSource(videoSource), mDisplay(display), mPrefs(prefs), mBattery(battery), mState(VideoPlayerState::STOPPED)
 {
 }
 
@@ -231,13 +232,7 @@ void VideoPlayer::framePlayerTask()
       mJpeg.decode(0, 0, 0);
       mJpeg.close();
     }
-    // show channel indicator 
-    if (millis() - mChannelVisible < 2000) {
-      mDisplay.drawChannel(mVideoSource->getChannelNumber());
-    }
-    #if CORE_DEBUG_LEVEL > 0
-    mDisplay.drawFPS(frameTimes.size() / 5);
-    #endif
+    drawOSD(frameTimes.size() / 5);
     mDisplay.endWrite();
   }
   // clean up
@@ -247,4 +242,42 @@ void VideoPlayer::framePlayerTask()
   }
   _framePlayerTaskHandle = NULL;
   vTaskDelete(NULL);
+}
+
+void VideoPlayer::drawOSD(int fps)
+{
+  int osdLevel = mPrefs.getOsdLevel();
+  if (osdLevel == 0)
+  {
+    return;
+  }
+  // show channel indicator for 2 seconds
+  if (millis() - mChannelVisible < 2000)
+  {
+    if (osdLevel >= 1)
+    {
+      if (strcmp(mVideoSource->getSourceType(), "Stream") == 0)
+      {
+        StreamVideoSource *streamSource = (StreamVideoSource *)mVideoSource;
+        if (streamSource->getStreamState() == StreamState::STREAMING)
+        {
+          mDisplay.drawOSD("Stream Start", CENTER);
+        }
+        else
+        {
+          mDisplay.drawOSD("Stream End", CENTER);
+        }
+      }
+      else
+      {
+        mDisplay.drawOSD(mVideoSource->getChannelName(), CENTER);
+      }
+    }
+  }
+  if (osdLevel >= 2)
+  {
+    char buffer[100];
+    sprintf(buffer, "FPS: %d, VOL: %.2fV", fps, mBattery.getVoltage());
+    mDisplay.drawOSD(buffer, TOP_RIGHT);
+  }
 }

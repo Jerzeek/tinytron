@@ -17,6 +17,10 @@ const osdLevelSelect = document.getElementById('osdLevel');
 const streamingTabLabel = document.getElementById('streamingTabLabel');
 const settingsTabRadio = document.getElementById('tab-settings');
 const splashscreen = document.getElementById('splashscreen');
+const updateForm = document.getElementById('updateForm');
+const updateButton = document.getElementById('updateButton');
+const firmwareFile = document.getElementById('firmwareFile');
+const updateProgress = document.getElementById('updateProgress');
 
 let ws;
 let videoFrameId;
@@ -63,6 +67,51 @@ settingsForm.addEventListener('submit', (event) => {
     console.error('Error saving settings:', error);
     alert('Failed to save settings.');
   });
+});
+
+// OTA update
+updateForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  updateButton.disabled = true;
+
+  const file = firmwareFile.files[0];
+  if (!file) {
+    alert('Please select a firmware file.');
+    return;
+  }
+
+  updateProgress.style.display = 'block';
+  updateProgress.value = 0;
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/update', true);
+
+  xhr.upload.onprogress = (event) => {
+    if (event.lengthComputable) {
+      const percentComplete = (event.loaded / event.total) * 100;
+      updateProgress.value = percentComplete;
+    }
+  };
+
+  xhr.onload = () => {
+    if (xhr.status === 200) {
+      alert('Update successful! The device will now reboot.');
+    } else {
+      alert(`Update failed! Server responded with status: ${xhr.status}`);
+    }
+    updateProgress.style.display = 'none';
+    updateButton.disabled = false;
+  };
+
+  xhr.onerror = () => {
+    alert('An error occurred during the update.');
+    updateProgress.style.display = 'none';
+    updateButton.disabled = false;
+  };
+
+  const formData = new FormData();
+  formData.append('update', file);
+  xhr.send(formData);
 });
 
 

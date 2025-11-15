@@ -64,11 +64,13 @@ bool WifiManager::initWiFi()
   return true;
 }
 
-void WifiManager::setupServer()
+void WifiManager::setupCommonRoutes()
 {
-  server->begin();
   server->on("/", HTTP_GET, [](AsyncWebServerRequest *request)
              { request->send(200, "text/html", index_html_start, index_html_end - index_html_start); });
+
+  server->on("/vcr.ttf", HTTP_GET, [](AsyncWebServerRequest *request)
+             { request->send(200, "text/html", vcr_ttf_start, vcr_ttf_end - vcr_ttf_start); });
 
   server->on("/app.js", HTTP_GET, [](AsyncWebServerRequest *request)
              {
@@ -77,7 +79,7 @@ void WifiManager::setupServer()
 
   server->on("/settings", HTTP_GET, [this](AsyncWebServerRequest *request)
              {
-    DynamicJsonDocument json(256);
+    JsonDocument json;
     json["ssid"] = prefs->getSsid();
     json["brightness"] = prefs->getBrightness();
     json["osdLevel"] = prefs->getOsdLevel();
@@ -91,38 +93,32 @@ void WifiManager::setupServer()
     JsonObject jsonObj = json.as<JsonObject>();
     bool restartRequired = false;
 
-    if (jsonObj.containsKey("ssid")) {
-        String newSsid = jsonObj["ssid"].as<String>();
-        if (newSsid != prefs->getSsid()) {
-            prefs->setSsid(newSsid);
-            restartRequired = true;
-        }
+    if (jsonObj["ssid"].is<String>() && jsonObj["ssid"].as<String>() != prefs->getSsid()) {
+        prefs->setSsid(jsonObj["ssid"].as<String>());
+        restartRequired = true;
     }
 
-    if (jsonObj.containsKey("pass")) {
-        String newPass = jsonObj["pass"].as<String>();
-        if (!newPass.isEmpty()) {
-            prefs->setPass(newPass);
-            restartRequired = true;
-        }
+    if (jsonObj["pass"].is<String>() && !jsonObj["pass"].as<String>().isEmpty()) {
+        prefs->setPass(jsonObj["pass"].as<String>());
+        restartRequired = true;
     }
 
-    if (jsonObj.containsKey("brightness")) {
-        prefs->setBrightness(jsonObj["brightness"].as<int>());
-    }
-
-    if (jsonObj.containsKey("osdLevel")) {
-        prefs->setOsdLevel(jsonObj["osdLevel"].as<int>());
-    }
+    if (jsonObj["brightness"].is<int>()) prefs->setBrightness(jsonObj["brightness"].as<int>());
+    if (jsonObj["osdLevel"].is<int>()) prefs->setOsdLevel(jsonObj["osdLevel"].as<int>());
 
     request->send(200, "application/json", "{\"status\":\"ok\"}");
 
     if (restartRequired) {
-        delay(1000);
+        delay(2000);
         ESP.restart();
     } });
   server->addHandler(handler);
+}
 
+void WifiManager::setupServer()
+{
+  server->begin();
+  setupCommonRoutes();
   server->on("/voltage", HTTP_GET, [this](AsyncWebServerRequest *request)
              {
     float voltage = _battery->getVoltage();
@@ -144,67 +140,13 @@ void WifiManager::setupAccessPoint()
   // Configure DNS server for captive portal
   dnsServer.start(53, "*", WiFi.softAPIP());
 
-  server->on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-             { request->send(200, "text/html", index_html_start, index_html_end - index_html_start); });
-
   server->on("/index", HTTP_GET, [](AsyncWebServerRequest *request)
              { request->send(200, "text/html", index_html_start, index_html_end - index_html_start); });
 
   // Add captive portal handler for all other requests
   server->addHandler(new CaptiveRequestHandler(index_html_start, index_html_end));
 
-  server->on("/app.js", HTTP_GET, [](AsyncWebServerRequest *request)
-             {
-              // DO NOT remove the -1 below, it is to avoid sending an extra null byte at the end
-              request->send(200, "application/javascript", app_js_start, app_js_end - app_js_start - 1); });
-
-  server->on("/settings", HTTP_GET, [this](AsyncWebServerRequest *request)
-             {
-    DynamicJsonDocument json(256);
-    json["ssid"] roadblocks= prefs->getSsid();
-    json["brightness"] = prefs->getBrightness();
-    json["osdLevel"] = prefs->getOsdLevel();
-    json["apMode"] = isAPMode();
-    String response;
-    serializeJson(json, response);
-    request->send(200, "application/json", response); });
-
-  AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/settings", [this](AsyncWebServerRequest *request, JsonVariant &json)
-                                                                          {
-    JsonObject jsonObj = json.as<JsonObject>();
-    bool restartRequired = false;
-
-    if (jsonObj.containsKey("ssid")) {
-        String newSsid = jsonObj["ssid"].as<String>();
-        if (newSsid != prefs->getSsid()) {
-            prefs->setSsid(newSsid);
-            restartRequired = true;
-        }
-    }
-
-    if (jsonObj.containsKey("pass")) {
-        String newPass = jsonObj["pass"].as<String>();
-        if (!newPass.isEmpty()) {
-            prefs->setPass(newPass);
-            restartRequired = true;
-        }
-    }
-
-    if (jsonObj.containsKey("brightness")) {
-        prefs->setBrightness(jsonObj["brightness"].as<int>());
-    }
-
-    if (jsonObj.containsKey("osdLevel")) {
-        prefs->setOsdLevel(jsonObj["osdLevel"].as<int>());
-    }
-
-    request->send(200, "application/json", "{\"status\":\"ok\"}");
-
-    if (restartRequired) {
-        delay(1000);
-        ESP.restart();
-    } });
-  server->addHandler(handler);
+  setupCommonRoutes();
 
   server->begin();
 }

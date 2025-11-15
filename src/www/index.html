@@ -21,42 +21,43 @@
     }
 
     body {
-      font-family: 'VCR OSD Mono', 'Courier New', Courier, monospace;
+      align-items: center;
       background-color: #0c0c0c;
       color: var(--main-color);
-      text-shadow: 0 0 7px var(--shadow);
-      min-height: 100vh;
-      margin: 0;
       display: flex;
-      align-items: center;
+      font-family: 'VCR OSD Mono', 'Courier New', Courier, monospace;
+      margin: 0;
+      min-height: 100vh;
+      text-shadow: 0 0 7px var(--shadow);
     }
 
     .container:after {
-      display: block;
-      content: '';
-      position: absolute;
-      pointer-events: none;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      z-index: 10;
       background: linear-gradient(to bottom, transparent 20%, rgb(0 0 0 / 55%) 50%, transparent 80%);
       background-size: 100% 4px;
+      bottom: 0;
+      content: '';
+      display: block;
+      left: 0;
+      pointer-events: none;
+      position: absolute;
+      top: 0;
+      right: 0;
+      z-index: 10;
     }
 
     .container {
-      width: 80%;
-      margin: 0 auto;
-      border: 2px solid var(--main-color);
-      padding: 20px;
-      box-shadow: 0 0 15px var(--main-color);
       background-color: rgba(var(--main-color-rgb), 0.05);
+      border: 2px solid var(--main-color);
       border-radius: 60px;
+      box-shadow: 0 0 15px var(--main-color);
+      margin: 0 auto;
+      padding: 20px;
+      width: 80%;
     }
 
     h1,
     h2 {
+      font-family: 'VCR OSD Mono', 'Courier New', Courier, monospace;
       text-align: center;
       text-transform: uppercase;
     }
@@ -68,11 +69,11 @@
     }
 
     .tabs label {
-      transition: 0.3s;
-      cursor: pointer;
       color: var(--main-color);
+      cursor: pointer;
       font-size: 17px;
       text-transform: uppercase;
+      transition: 0.3s;
     }
 
     .tabs>label {
@@ -85,12 +86,12 @@
     }
 
     .tabs .tabcontent {
+      border-top: none;
+      display: none;
       order: 99;
       /* Move content to the end of the flex container */
-      width: 100%;
-      display: none;
       padding: 20px;
-      border-top: none;
+      width: 100%;
     }
 
     .tabs input[type="radio"] {
@@ -99,8 +100,8 @@
     }
 
     .tabs input[type="radio"]:checked+label {
-      background-color: var(--main-color);
       color: #0c0c0c;
+      background-color: var(--main-color);
       text-shadow: none;
     }
 
@@ -112,13 +113,13 @@
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
       background-color: #0c0c0c;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      height: 100%;
+      width: 100%;
       z-index: 100;
     }
 
@@ -126,21 +127,22 @@
     select,
     button {
       background-color: #1a1a1a;
-      color: var(--main-color);
       border: 1px solid var(--main-color);
-      padding: 10px;
-      margin: 5px 0;
+      color: var(--main-color);
+      cursor: pointer;
       font-family: inherit;
       font-size: large;
+      margin: 5px 0;
+      padding: 10px;
     }
 
     input[type=submit] {
-      width: 100%;
       background-color: var(--main-color);
+      border-radius: 0 0 16px 16px;
       color: #0c0c0c;
       cursor: pointer;
       margin-top: 30px;
-      border-radius: 0 0 16px 16px;
+      width: 100%;
     }
 
     input[type=submit]:hover {
@@ -167,17 +169,19 @@
       margin-top: 20px;
     }
 
-    video {
-      z-index: 100;
-      position: relative;
-      width: 288px;
+    video, #previewImage {
       height: 240px;
+      width: 288px;
+      border-radius: 20px;
+      position: relative;
+      z-index: 100;
+    }
+
+    video {
       object-fit: contain;
     }
 
     #previewImage {
-      width: 288px;
-      height: 240px;
       display: none;
     }
 
@@ -201,7 +205,7 @@
       <label for="tab-streaming" id="streamingTabLabel">Video Streaming</label>
       <div class="tabcontent">
         <div>
-          <p>Select a video file to stream.</p>
+          <label for="videoFile">Select a video file to stream</label>
           <input type="file" id="videoFile" accept="video/*">
           <button id="startButton">Start Streaming</button>
           <button id="stopButton">Stop Streaming</button>
@@ -229,8 +233,8 @@
 
       <input type="radio" name="tabs" id="tab-settings">
       <label for="tab-settings">Settings</label>
-      <div class="tabcontent" id="settings">
-        <form id="settings">
+      <div class="tabcontent">
+        <form id="settingsForm">
           <span>Battery Voltage: <span id="batteryVoltageDisplay">-</span> V</span>
 
           <label for="ssid">SSID</label>

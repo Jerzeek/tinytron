@@ -2,35 +2,37 @@
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
+#include "Prefs.h"
+#include "OSD.h"
+#include "freertos/semphr.h"
 
-// position of the OSD text
-enum OSDPosition
-{
-  TOP_LEFT,
-  TOP_RIGHT,
-  BOTTOM_LEFT,
-  BOTTOM_RIGHT,
-  CENTER
-};
+class Prefs;
 
 class Display
 {
 private:
   TFT_eSPI *tft;
+  TFT_eSprite *frameSprite;
+  Prefs *_prefs;
   uint16_t *dmaBuffer[2] = {NULL, NULL};
   int dmaBufferIndex = 0;
+  SemaphoreHandle_t tft_mutex;
 
 public:
-  Display();
+  Display(Prefs *prefs);
   void setBrightness(uint8_t brightness);
   void drawPixels(int x, int y, int width, int height, uint16_t *pixels);
+  void drawPixelsToSprite(int x, int y, int width, int height, uint16_t *pixels);
+  void flushSprite();
   void startWrite();
   void endWrite();
   int width();
   int height();
   void fillScreen(uint16_t color);
-  void drawOSD(const char *text, OSDPosition position);
+  void drawOSD(const char *text, OSDPosition position, OSDLevel level);
+  void clearOSD(OSDPosition position);
   void drawSDCardFailed();
+  void dmaWait();
   static uint16_t color565(uint8_t r, uint8_t g, uint8_t b)
   {
     return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);

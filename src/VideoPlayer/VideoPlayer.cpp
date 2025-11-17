@@ -43,9 +43,9 @@ void VideoPlayer::setChannel(int channel)
   {
     vTaskDelay(10);
   }
-  mChannelVisible = millis();
   // update the video source
   mVideoSource->setChannel(channel);
+  drawOSDTimed(mVideoSource->getChannelName(), TOP_LEFT, OSDLevel::STANDARD);
   playTask();
 }
 
@@ -57,8 +57,12 @@ void VideoPlayer::nextChannel()
   {
     vTaskDelay(10);
   }
-  mChannelVisible = millis();
   mVideoSource->nextChannel();
+  if (mState == VideoPlayerState::PAUSED)
+  {
+    play();
+  }
+  drawOSDTimed(mVideoSource->getChannelName(), TOP_LEFT, OSDLevel::STANDARD);
   playTask();
 }
 
@@ -90,17 +94,22 @@ void VideoPlayer::stop()
   }
   mState = VideoPlayerState::STOPPED;
   mVideoSource->setState(VideoPlayerState::STOPPED);
+  vTaskDelay(10);
   mDisplay.fillScreen(DisplayColors::BLACK);
+  mDisplay.drawOSD("Stopped", CENTER, OSDLevel::STANDARD);
 }
 
 void VideoPlayer::pause()
 {
+  Serial.println("Pausing");
   if (mState == VideoPlayerState::PAUSED)
   {
     return;
   }
+  drawOSDTimed("Paused", CENTER, OSDLevel::STANDARD);
   mState = VideoPlayerState::PAUSED;
   mVideoSource->setState(VideoPlayerState::PAUSED);
+  Serial.println("Paused");
 }
 
 void VideoPlayer::playPauseToggle()
@@ -148,7 +157,7 @@ int dmaBufferIndex = 0;
 int _doDraw(JPEGDRAW *pDraw)
 {
   VideoPlayer *player = (VideoPlayer *)pDraw->pUser;
-  player->mDisplay.drawPixels(pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight, pDraw->pPixels);
+  player->mDisplay.drawPixelsToSprite(pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight, pDraw->pPixels);
   return 1;
 }
 
@@ -172,12 +181,37 @@ void VideoPlayer::framePlayerTask()
   size_t jpegLength = 0;
   // used for calculating frame rate
   std::list<int> frameTimes;
+  OSDLevel osdLevel = mPrefs.getOsdLevel();
   while (m_runTask)
   {
-    if (mState == VideoPlayerState::STOPPED || mState == VideoPlayerState::PAUSED)
+    // handle timed OSD
+    if (_timedOsdActive && millis() >= _timedOsdEnd)
     {
-      // nothing to do - just wait
-      vTaskDelay(100 / portTICK_PERIOD_MS);
+      _timedOsdActive = false;
+      if (mState == VideoPlayerState::PAUSED)
+      {
+        redrawFrame();
+      //   drawOSDTimed("Paused", CENTER, OSDLevel::STANDARD);
+      }
+      // else if (mState == VideoPlayerState::STOPPED)
+      // {
+        // mDisplay.clearOSD(_timedOsdPosition);
+      // }
+    }
+
+    if (mState == VideoPlayerState::PAUSED)
+    {
+    //   // draw the paused OSD over the current frame
+    //   // drawOSDTimed("Paused", CENTER, OSDLevel::STANDARD);
+    //   // push the result to the screen
+    //   // mDisplay.flushSprite();
+    //   // now wait until we are un-paused
+    //   while (mState == VideoPlayerState::PAUSED)
+    //   {
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+    //     if (!m_runTask)
+    //       break; // allow task to be stopped while paused
+    //   }
       continue;
     }
     if (mState == VideoPlayerState::STATIC)
@@ -215,72 +249,92 @@ void VideoPlayer::framePlayerTask()
       vTaskDelay(10 / portTICK_PERIOD_MS);
       continue;
     }
-    frameTimes.push_back(millis());
-    // keep the frame rate elapsed time to 5 seconds
-    while(frameTimes.size() > 0 && frameTimes.back() - frameTimes.front() > 5000) {
-      frameTimes.pop_front();
+    // store the current frame for redraw
+    if (_currentFrame == NULL || jpegLength > _currentFrameSize)
+    {
+      if (_currentFrame)
+      {
+        free(_currentFrame);
+      }
+      _currentFrame = (uint8_t *)malloc(jpegLength);
     }
-    mDisplay.startWrite();
+    if (_currentFrame)
+    {
+      _currentFrameSize = jpegLength;
+      memcpy(_currentFrame, jpegBuffer, jpegLength);
+    }
+
+    if (osdLevel >= OSDLevel::DEBUG)
+    {
+      frameTimes.push_back(millis());
+      // keep the frame rate elapsed time to 5 seconds
+      while (frameTimes.size() > 0 && frameTimes.back() - frameTimes.front() > 5000)
+      {
+        frameTimes.pop_front();
+      }
+    }
     if (mJpeg.openRAM(jpegBuffer, jpegLength, _doDraw))
     {
       mJpeg.setUserPointer(this);
-      #ifdef LED_MATRIX
-      mJpeg.setPixelType(RGB565_LITTLE_ENDIAN);
-      #else
       mJpeg.setPixelType(RGB565_BIG_ENDIAN);
-      #endif
       mJpeg.decode(0, 0, 0);
       mJpeg.close();
     }
-    // show channel indicator 
-    if (millis() - mChannelVisible < 2000) {
-      drawOSD(frameTimes.size() / 5);
+    if (osdLevel >= OSDLevel::DEBUG)
+    {
+      char fpsText[8];
+      sprintf(fpsText, "%d FPS", frameTimes.size() / 5);
+      mDisplay.drawOSD(fpsText, BOTTOM_RIGHT, OSDLevel::DEBUG);
+      char batText[8];
+      sprintf(batText, "%.2fV", mBattery.getVoltage());
+      mDisplay.drawOSD(batText, BOTTOM_LEFT, OSDLevel::DEBUG);
     }
-    mDisplay.endWrite();
+    if (_timedOsdActive)
+    {
+      mDisplay.drawOSD(_timedOsdText.c_str(), _timedOsdPosition, _timedOsdLevel);
+    }
+    mDisplay.flushSprite();
   }
   // clean up
   if (staticBuffer != NULL)
   {
     free(staticBuffer);
   }
+  if (_currentFrame != NULL)
+  {
+    free(_currentFrame);
+    _currentFrame = NULL;
+  }
   _framePlayerTaskHandle = NULL;
   vTaskDelete(NULL);
 }
 
-void VideoPlayer::drawOSD(int fps)
+void VideoPlayer::drawOSDTimed(const char *text, OSDPosition position, OSDLevel level, uint32_t durationMs)
 {
-  int osdLevel = mPrefs.getOsdLevel();
-  if (osdLevel == 0)
+  _timedOsdText = text;
+  _timedOsdPosition = position;
+  _timedOsdLevel = level;
+  _timedOsdEnd = millis() + durationMs;
+  _timedOsdActive = true;
+  // immediately draw the OSD
+  mDisplay.drawOSD(text, position, level);
+}
+
+void VideoPlayer::redrawFrame()
+{
+  if (_currentFrame)
   {
-    return;
-  }
-  // show channel indicator for 2 seconds
-  if (millis() - mChannelVisible < 2000)
-  {
-    if (osdLevel >= 1)
+    if (mJpeg.openRAM(_currentFrame, _currentFrameSize, _doDraw))
     {
-      if (strcmp(mVideoSource->getSourceType(), "Stream") == 0)
-      {
-        StreamVideoSource *streamSource = (StreamVideoSource *)mVideoSource;
-        if (streamSource->getStreamState() == StreamState::STREAMING)
-        {
-          mDisplay.drawOSD("Stream Start", CENTER);
-        }
-        else
-        {
-          mDisplay.drawOSD("Stream End", CENTER);
-        }
-      }
-      else
-      {
-        mDisplay.drawOSD(mVideoSource->getChannelName(), CENTER);
-      }
+      mJpeg.setUserPointer(this);
+      mJpeg.setPixelType(RGB565_BIG_ENDIAN);
+      mJpeg.decode(0, 0, 0);
+      mJpeg.close();
     }
+    mDisplay.flushSprite();
   }
-  if (osdLevel >= 2)
+  else
   {
-    char buffer[100];
-    sprintf(buffer, "FPS: %d, VOL: %.2fV", fps, mBattery.getVoltage());
-    mDisplay.drawOSD(buffer, TOP_RIGHT);
+    mDisplay.fillScreen(DisplayColors::BLACK);
   }
 }

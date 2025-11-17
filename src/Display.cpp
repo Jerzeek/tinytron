@@ -1,4 +1,3 @@
-#ifndef LED_MATRIX
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include "Display.h"
@@ -8,17 +7,27 @@
 #define LEDC_TIMER_8_BIT 8
 #define LEDC_BASE_FREQ 5000
 
-Display::Display() : tft(new TFT_eSPI())
+Display::Display(Prefs *prefs) : tft(new TFT_eSPI()), _prefs(prefs)
 {
+  tft_mutex = xSemaphoreCreateRecursiveMutex();
+
+  // First, initialize the TFT itself and set the rotation
+  tft->init();
+  tft->setRotation(3);
+
+  // Now create the sprite with the correct, rotated dimensions
+  frameSprite = new TFT_eSprite(tft);
+  frameSprite->createSprite(tft->width(), tft->height());
+  frameSprite->setTextFont(2);
+  frameSprite->setTextSize(2);
+
 // setup the backlight
 #ifdef TFT_BL
   ledcSetup(LEDC_CHANNEL_0, LEDC_BASE_FREQ, LEDC_TIMER_8_BIT);
   ledcAttachPin(TFT_BL, LEDC_CHANNEL_0);
   ledcWrite(LEDC_CHANNEL_0, 255); // turn on backlight
 #endif
-
-  tft->init();
-  tft->setRotation(3);
+  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
   tft->fillScreen(TFT_BLACK);
 #ifdef USE_DMA
   tft->initDMA();
@@ -27,15 +36,19 @@ Display::Display() : tft(new TFT_eSPI())
   tft->setTextFont(2);
   tft->setTextSize(2);
   tft->setTextColor(TFT_GREEN, TFT_BLACK);
+  xSemaphoreGiveRecursive(tft_mutex);
 }
 
 void Display::setBrightness(uint8_t brightness)
 {
 #ifdef TFT_BL
+  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
   ledcWrite(LEDC_CHANNEL_0, brightness);
+  xSemaphoreGiveRecursive(tft_mutex);
 #endif
 }
 
+// this function now draws directly to the screen, used for non-buffered drawing
 void Display::drawPixels(int x, int y, int width, int height, uint16_t *pixels)
 {
   int numPixels = width * height;
@@ -44,50 +57,81 @@ void Display::drawPixels(int x, int y, int width, int height, uint16_t *pixels)
     dmaBuffer[dmaBufferIndex] = (uint16_t *)malloc(numPixels * 2);
   }
   memcpy(dmaBuffer[dmaBufferIndex], pixels, numPixels * 2);
-#ifdef USE_DMA
-  tft->dmaWait();
-#endif
+  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
   tft->setAddrWindow(x, y, width, height);
 #ifdef USE_DMA
   tft->pushPixelsDMA(dmaBuffer[dmaBufferIndex], numPixels);
 #else
   tft->pushPixels(dmaBuffer[dmaBufferIndex], numPixels);
 #endif
+  xSemaphoreGiveRecursive(tft_mutex);
   dmaBufferIndex = (dmaBufferIndex + 1) % 2;
 }
 
+// new function to draw to our framebuffer sprite
+void Display::drawPixelsToSprite(int x, int y, int width, int height, uint16_t *pixels)
+{
+  frameSprite->pushImage(x, y, width, height, pixels);
+}
+
+// new function to push the framebuffer to the screen
+void Display::flushSprite()
+{
+  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
+  frameSprite->pushSprite(0, 0);
+  xSemaphoreGiveRecursive(tft_mutex);
+}
+
+
 void Display::startWrite()
 {
+  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
   tft->startWrite();
 }
 
 void Display::endWrite()
 {
   tft->endWrite();
+  xSemaphoreGiveRecursive(tft_mutex);
 }
 
 int Display::width()
 {
-  return tft->width();
+  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
+  int w = tft->width();
+  xSemaphoreGiveRecursive(tft_mutex);
+  return w;
 }
 
 int Display::height()
 {
-  return tft->height();
+  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
+  int h = tft->height();
+  xSemaphoreGiveRecursive(tft_mutex);
+  return h;
 }
 
 void Display::fillScreen(uint16_t color)
 {
-  tft->fillScreen(color);
+  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
+  frameSprite->fillScreen(color);
+  xSemaphoreGiveRecursive(tft_mutex);
 }
 
-void Display::drawOSD(const char *text, OSDPosition position)
+void Display::drawOSD(const char *text, OSDPosition position, OSDLevel level)
 {
-  tft->setTextColor(TFT_GREEN, TFT_BLACK);
+  if (_prefs->getOsdLevel() < level)
+  {
+    return;
+  }
+  // draw OSD text into the sprite, with a black background for readability
+  frameSprite->setTextColor(TFT_ORANGE, TFT_BLACK);
+
+  int textWidth = frameSprite->textWidth(text);
+  int textHeight = frameSprite->fontHeight();
   int x = 0;
   int y = 0;
-  int textWidth = tft->textWidth(text);
-  int textHeight = tft->fontHeight();
+
   switch (position)
   {
   case TOP_LEFT:
@@ -111,16 +155,31 @@ void Display::drawOSD(const char *text, OSDPosition position)
     y = (height() - textHeight) / 2;
     break;
   }
-  tft->setCursor(x, y);
-  tft->println(text);
+  frameSprite->setCursor(x, y);
+  frameSprite->println(text);
 }
 
-void Display::drawSDCardFailed()
+void Display::clearOSD(OSDPosition position)
 {
-  tft->fillScreen(TFT_RED);
-  tft->setCursor(0, 20);
-  tft->setTextColor(TFT_WHITE);
-  tft->setTextSize(2);
-  tft->println("Failed to mount SD Card");
+  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
+  int y = 0;
+  // with font 2, size 2, the height is 32
+  int textHeight = 35;
+  switch (position)
+  {
+  case TOP_LEFT:
+  case TOP_RIGHT:
+    y = 20;
+    break;
+  case BOTTOM_LEFT:
+  case BOTTOM_RIGHT:
+    y = height() - textHeight - 20;
+    break;
+  case CENTER:
+    y = (height() - textHeight) / 2;
+    break;
+  }
+  tft->fillRect(0, y, width(), textHeight, TFT_BLACK);
+  xSemaphoreGiveRecursive(tft_mutex);
 }
-#endif
+

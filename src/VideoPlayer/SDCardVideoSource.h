@@ -12,7 +12,7 @@ class SDCardVideoSource : public VideoSource
 {
 private:
     std::vector<std::string> mAviFiles;
-    AVIParser *mCurrentChannelAudioParser = NULL;
+    // AVIParser *mCurrentChannelAudioParser = NULL;
     AVIParser *mCurrentChannelVideoParser = NULL;
     SDCard *mSDCard;
     const char *mAviPath;
@@ -28,16 +28,13 @@ public:
     {
         return mAviFiles.size();
     };
-    AVIParser *getAudioParser()
-    {
-        return mCurrentChannelAudioParser;
-    };
+    const char *getChannelName();
+    // AVIParser *getAudioParser()
+    // {
+    //     return mCurrentChannelAudioParser;
+    // };
     // see superclass for documentation
     bool getVideoFrame(uint8_t **buffer, size_t &bufferLength, size_t &frameLength);
     void setChannel(int channel);
     void nextChannel();
-    const char *getSourceType()
-    {
-        return "SD Card";
-    }
 };

@@ -22,22 +22,25 @@ jobs:
       - name: 🛠️ Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # A modern, stable LTS version
+          node-version: '20'
 
       - name: 📦 Install and Prepare Assets
         run: |
-          # 1. Install ffmpeg-wasm
+          # Change directory to docs
           cd docs
+          
+          # 1. Install dependencies (ffmpeg-wasm + marked)
           npm install
 
           # 2. Prepare the distribution folder
           mkdir -p dist
-          cp index.html dist/
-          # cp style.css dist/
+          cp transcode.html dist/
           cp *.js dist/
-          cp ../README.md dist/
 
-          # 3. Manually copy the ffmpeg-wasm core files from node_modules/
+          # 3. Compile README.md into dist/index.html
+          npm run md-to-html
+          
+          # 4. Manually copy the ffmpeg-wasm core files from node_modules/
           mkdir -p dist/ffmpeg
           mkdir -p dist/ffmpeg-util
           cp node_modules/@ffmpeg/ffmpeg/dist/esm/* dist/ffmpeg/

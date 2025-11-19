@@ -1,6 +1,14 @@
 {
+  "name": "docs-tool",
+  "version": "1.0.0",
   "dependencies": {
-    "@ffmpeg/ffmpeg": "^0.12.15",
-    "@ffmpeg/util": "^0.12.2"
+    "@ffmpeg/ffmpeg": "^0.12.0",
+    "@ffmpeg/util": "^0.12.0"
+  },
+  "devDependencies": {
+    "marked": "^12.0.0"
+  },
+  "scripts": {
+    "md-to-html": "node compile-readme.mjs"
   }
 }

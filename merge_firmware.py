@@ -16,67 +16,53 @@ def merge_bin(source, target, env):
     Merges the built binaries into a single flashable file.
     """
     print("Running merge_bin.py post-build script...")
-
-    # Get the path to esptool.py from the PlatformIO toolchain
-    esptool_path = os.path.join(
-        env.PioPlatform().get_package_dir("tool-esptoolpy"),
-        "esptool.py",
-    )
-
+    
     # Get configuration from the build environment
-    build_dir = env.subst("$BUILD_DIR")
-    chip = env.get("BOARD_MCU")
-    flash_mode = env.get("BOARD_BUILD.FLASH_MODE", "dio")
-
-    # The board_upload.flash_size from platformio.ini is the most reliable source
-    flash_size_str = env.get("BOARD_UPLOAD.FLASH_SIZE", "16MB")
-
-    # Convert f_flash (e.g., "80000000L") to flash frequency string (e.g., "80m")
-    f_flash = env.get("BOARD_BUILD.F_FLASH", "80000000L")
-    flash_freq = str(int(f_flash.replace("L", "")) // 1000000) + "m"
+    board_config = env.BoardConfig()
+    chip = board_config.get("build.mcu", "esp32s3")
+    flash_mode = board_config.get("build.flash_mode", "dio")
+    flash_size = board_config.get("upload.flash_size", "16MB")
+    flash_freq = env.subst("${__get_board_f_flash(__env__)}")
 
     # Define the output path for the merged binary
-    output_path = os.path.join(build_dir, "firmware-factory.bin")
+    merged_bin_path = os.path.join(env.get('BUILD_DIR'), "firmware-factory.bin")
+
+    # The list of binaries to merge is provided by the build environment
+    # in FLASH_EXTRA_IMAGES. This includes bootloader, partitions, and boot_app0.
+    flash_images = [
+        (item[0], env.subst(item[1])) for item in env.get("FLASH_EXTRA_IMAGES", [])
+    ]
+    
+    # Add the main application binary
+    app_offset = env.subst("$ESP32_APP_OFFSET")
+    app_path = env.subst(target[0].get_abspath())
+    flash_images.append((app_offset, app_path))
 
     # Define the command arguments for esptool.py
-    # Offsets are based on the standard partition scheme for ESP32-S3
-    command = [
-        sys.executable,
-        esptool_path,
-        "--chip",
-        chip,
+    # Using env.subst to let PlatformIO expand variables like $PYTHONEXE and $OBJCOPY
+    command = env.subst([
+        '"$PYTHONEXE"',
+        '"$OBJCOPY"',
+        "--chip", chip,
         "merge_bin",
-        "-o",
-        output_path,
-        "--flash_mode",
-        flash_mode,
-        "--flash_freq",
-        flash_freq,
-        "--flash_size",
-        flash_size_str,
-        "0x0", os.path.join(build_dir, "bootloader.bin"),
-        "0x8000", os.path.join(build_dir, "partitions.bin"),
-        "0xe000", os.path.join(build_dir, "boot_app0.bin"),
-        "0x10000", os.path.join(build_dir, "firmware.bin"),
-    ]
+        "--output", '"' + merged_bin_path + '"',
+        "--flash_mode", flash_mode,
+        "--flash_freq", flash_freq,
+        "--flash_size", flash_size,
+        *[item for sublist in flash_images for item in sublist]
+    ])
 
     print("Merging binaries with command:")
     print(" ".join(command))
 
-    # Execute the command
-    result = run(command, capture_output=True, text=True)
+    # Execute the command using PlatformIO's environment
+    ret = env.Execute(" ".join(command))
 
-    if result.returncode != 0:
-        print("Error: Failed to merge binaries.")
-        print(f"Exit Code: {result.returncode}")
-        print("--- stdout ---")
-        print(result.stdout)
-        print("--- stderr ---")
-        print(result.stderr)
-        env.Exit(1)
+    if ret == 0:
+        print(f"Successfully merged binaries to {merged_bin_path}")
     else:
-        print(f"Successfully merged binaries to {output_path}")
-        print(result.stdout)
+        print(f"Error: Failed to merge binaries. Exit code: {ret}")
+        env.Exit(1)
 
 # Register the 'merge_bin' function as a post-build action for the firmware.bin target.
 # This ensures the script runs automatically after a successful build.

@@ -45,7 +45,7 @@ jobs:
         run: |
           # Change directory to docs
           cd docs
-          
+
           # 1. Install dependencies (ffmpeg-wasm + marked)
           npm install
 
@@ -64,7 +64,7 @@ jobs:
 
           # 4. Compile README.md into dist/index.html
           npm run md-to-html
-          
+
           # 5. Copy STL files and images
           cp -r ../stl dist/stl
 

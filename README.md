@@ -89,7 +89,18 @@ Then wrap a bit of electrical tape around the male pins in order to create a mak
 
 ## Flashing the firmware
 
-<iframe style="border:none;width:100%;height:400px;" src="https://t0mg.github.io/esp32-minitv/flash.html"></iframe>
+### Web flasher
+
+You can the latest build directly from this page: simple connect your ESP32 to this computer over USB C, click Connect, and follow the instructions.
+
+<esp-web-install-button manifest="firmware/manifest.json">
+</esp-web-install-button>
+
+<p class="mdOnly">Please visit the <a href="https://t0mg.github.io/esp32-minitv/#web-flasher">website</a> version of this documentation to see the Web Flasher button.</p>
+
+**Note:** this is a "factory firmware", flashing it will erase the memory and any previous settings stored on your device. To avoid losing your preferences see the other options below.
+
+### Building locally
 
 This project is built with [PlatformIO](https://platformio.org/). You can use the PlatformIO extension for VSCode or the command line interface.
 

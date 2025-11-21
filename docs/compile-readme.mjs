@@ -12,6 +12,22 @@ if (!fs.existsSync(path.resolve(process.cwd(), 'dist'))) {
 const outputPath = path.resolve(process.cwd(), 'dist', 'index.html');
 const templatePath = path.resolve(process.cwd(), 'readme-template.html');
 
+// Add anchor links to headings, like on GitHub
+const renderer = {
+  heading(text, depth) {
+    const escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
+
+    return `
+            <h${depth}>
+              <a name="${escapedText}" class="anchor" href="#${escapedText}">
+                <span class="header-link"></span>
+              </a>
+              ${text}
+            </h${depth}>`;
+  }
+};
+marked.use({ renderer });
+
 try {
     // 1. Read the Markdown content
     const markdown = fs.readFileSync(inputPath, 'utf8');

@@ -78,7 +78,7 @@ void WifiManager::setupCommonRoutes()
   server->on("/app.js", HTTP_GET, [](AsyncWebServerRequest *request)
              {
               // DO NOT remove the -1 below, it is to avoid sending an extra null byte at the end
-              request->send(200, "application/javascript", app_js_start, app_js_end - app_js_start - 1); });
+              request->send(200, "application/javascript; charset=utf-8", app_js_start, app_js_end - app_js_start - 1); });
 
   server->on("/settings", HTTP_GET, [this](AsyncWebServerRequest *request)
              {
@@ -151,11 +151,16 @@ void WifiManager::setupServer()
 {
   server->begin();
   setupCommonRoutes();
-  server->on("/voltage", HTTP_GET, [this](AsyncWebServerRequest *request)
+  server->on("/battery", HTTP_GET, [this](AsyncWebServerRequest *request)
              {
-    float voltage = _battery->getVoltage();
-    String jsonResponse = "{\"voltage\": " + String(voltage) + "}";
-    request->send(200, "application/json", jsonResponse); });
+    JsonDocument json;
+    json["voltage"] = _battery->getVoltage();
+    json["level"] = _battery->getBatteryLevel();
+    json["charging"] = _battery->isCharging();
+    json["low"] = _battery->isLowBattery();
+    String response;
+    serializeJson(json, response);
+    request->send(200, "application/json", response); });
 }
 
 void WifiManager::setupAccessPoint()

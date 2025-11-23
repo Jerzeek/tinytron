@@ -27,7 +27,6 @@ Display::Display(Prefs *prefs) : tft(new TFT_eSPI()), _prefs(prefs)
   ledcAttachPin(TFT_BL, LEDC_CHANNEL_0);
   ledcWrite(LEDC_CHANNEL_0, 255); // turn on backlight
 #endif
-  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
   tft->fillScreen(TFT_BLACK);
 #ifdef USE_DMA
   tft->initDMA();
@@ -36,15 +35,12 @@ Display::Display(Prefs *prefs) : tft(new TFT_eSPI()), _prefs(prefs)
   tft->setTextFont(2);
   tft->setTextSize(2);
   tft->setTextColor(TFT_GREEN, TFT_BLACK);
-  xSemaphoreGiveRecursive(tft_mutex);
 }
 
 void Display::setBrightness(uint8_t brightness)
 {
 #ifdef TFT_BL
-  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
   ledcWrite(LEDC_CHANNEL_0, brightness);
-  xSemaphoreGiveRecursive(tft_mutex);
 #endif
 }
 
@@ -91,25 +87,19 @@ void Display::fillSprite(uint16_t color)
 
 int Display::width()
 {
-  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
   int w = tft->width();
-  xSemaphoreGiveRecursive(tft_mutex);
   return w;
 }
 
 int Display::height()
 {
-  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
   int h = tft->height();
-  xSemaphoreGiveRecursive(tft_mutex);
   return h;
 }
 
 void Display::fillScreen(uint16_t color)
 {
-  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
-  frameSprite->fillScreen(color);
-  xSemaphoreGiveRecursive(tft_mutex);
+  frameSprite->fillSprite(color);
 }
 
 void Display::drawOSD(const char *text, OSDPosition position, OSDLevel level)
@@ -118,6 +108,7 @@ void Display::drawOSD(const char *text, OSDPosition position, OSDLevel level)
   {
     return;
   }
+  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
   // draw OSD text into the sprite, with a black background for readability
   frameSprite->setTextColor(TFT_ORANGE, TFT_BLACK);
 
@@ -151,6 +142,7 @@ void Display::drawOSD(const char *text, OSDPosition position, OSDLevel level)
   }
   frameSprite->setCursor(x, y);
   frameSprite->println(text);
+  xSemaphoreGiveRecursive(tft_mutex);
 }
 
 

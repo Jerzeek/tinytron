@@ -286,9 +286,16 @@ void VideoPlayer::framePlayerTask()
       char fpsText[8];
       sprintf(fpsText, "%d FPS", frameTimes.size() / 5);
       mDisplay.drawOSD(fpsText, BOTTOM_RIGHT, OSDLevel::DEBUG);
-      char batText[8];
-      sprintf(batText, "%.2fV", mBattery.getVoltage());
+      char batText[16];
+      sprintf(batText, "%d%% %.2f", mBattery.getBatteryLevel(), mBattery.getVoltage());
       mDisplay.drawOSD(batText, BOTTOM_LEFT, OSDLevel::DEBUG);
+      if (mBattery.isCharging()) {
+        mDisplay.drawOSD("Charging", TOP_RIGHT, OSDLevel::DEBUG);
+      }
+    }
+    if (osdLevel >= OSDLevel::STANDARD && mBattery.isLowBattery())
+    {
+      mDisplay.drawOSD("Low Batt.", TOP_RIGHT, OSDLevel::STANDARD);
     }
     if (_timedOsdActive)
     {

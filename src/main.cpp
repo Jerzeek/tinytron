@@ -102,9 +102,18 @@ void setup()
   button.reset();
 }
 
+unsigned long lastBatteryUpdate = 0;
+
 void loop()
 {
   delay(5);
+
+  unsigned long now = millis();
+  if (now - lastBatteryUpdate > 10000)
+  {
+    battery.update();
+    lastBatteryUpdate = now;
+  }
 
   button.update();
   if (wifiManagerActive)

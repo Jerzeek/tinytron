@@ -2,9 +2,10 @@
 <html>
 
 <head>
-  <title>ESP32-MiniTV</title>
+  <title>MiniTV</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128250;</text></svg>">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128250;</text></svg>">
   <style>
     @font-face {
       font-family: 'VCR OSD Mono';
@@ -15,6 +16,7 @@
       --main-color: rgb(255 129 0);
       --main-color-rgb: 255 129 0;
       --shadow: rgb(231 117 0);
+      --light-hover: rgb(156, 156, 156);
     }
 
     input[type='range'] {
@@ -53,7 +55,7 @@
       border-radius: 60px;
       box-shadow: 0 0 15px var(--main-color);
       margin: 20px 0;
-      padding: 20px;
+      padding: 15px;
       width: calc(100vw - 90px);
       max-width: 880px;
     }
@@ -62,7 +64,19 @@
     h2 {
       font-family: 'VCR OSD Mono', 'Courier New', Courier, monospace;
       text-align: center;
-      text-transform: uppercase;
+    }
+
+    a, a:visited {
+      color: var(--main-color);
+    }
+
+    a:hover {
+      color: var(--light-hover);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 15px;
     }
 
     /* Tab styles */
@@ -141,19 +155,21 @@
       padding: 10px;
     }
 
-    input[type=submit] {
+    input[type=submit], button {
       background-color: var(--main-color);
-      border-radius: 0 0 16px 16px;
       color: #0c0c0c;
       cursor: pointer;
-      margin-top: 30px;
-      width: 100%;
       text-shadow: 0 0 3px #0c0c0c;
       box-shadow: 0 0 5px var(--shadow);
     }
 
-    input[type=submit]:hover {
-      background-color: rgb(156, 156, 156);
+    input[type=submit] {
+      border-radius: 0 0 16px 16px;
+      margin-top: 30px;
+    }
+
+    input[type=submit]:hover, button:hover {
+      background-color: var(--light-hover);
     }
 
     .tabcontent label {
@@ -184,7 +200,7 @@
       border: 1px solid var(--main-color);
       border-radius: 20px;
       box-sizing: border-box;
-      height: 240px;    
+      height: 240px;
       position: relative;
       width: 288px;
       z-index: 100;
@@ -225,28 +241,43 @@
       background-color: var(--main-color);
     }
 
+    .lowBatt {
+      position: absolute;
+      width: 100%;
+      top: 32px;
+      left: 0;
+      font-size: 1.25em;
+      text-transform: uppercase;
+      text-align: center;
+      animation: blink 2s cubic-bezier(0.96, 0.38, 0, 0.54) infinite    }
+
+    @keyframes blink {
+      100% {
+        opacity: 0;
+      }
+    }
+
     @media (min-width: 600px) {
       .tabcontent {
         order: 99;
       }
 
-      .tabs> label {
+      .tabs>label {
         width: calc(33.33% - 32px);
       }
-
     }
   </style>
 </head>
 
 <body>
   <div id="splashscreen">
-    <h1>ESP32-MiniTV</h1>
+    <h1>MiniTV</h1>
     <p>Connecting...</p>
   </div>
 
   <div class="container">
-    <h1>ESP32-MiniTV</h1>
-
+    <h1>MiniTV</h1>
+    <div class="lowBatt" style="display: none;">Battery Low</div>
     <div class="tabs" style="display: none;">
       <input type="radio" name="tabs" id="tab-streaming" checked>
       <label for="tab-streaming" id="streamingTabLabel">Video Streaming</label>
@@ -281,7 +312,11 @@
       <label for="tab-settings">Settings</label>
       <div class="tabcontent">
         <form id="settingsForm">
-          <span>Battery Voltage: <span id="batteryVoltageDisplay">-</span> V</span>
+          <span>Battery:
+            <span id="batteryLevelDisplay"></span>
+            <span id="batteryVoltageDisplay">-</span> V
+            <span id="batteryChargingDisplay"></span>
+          </span>
 
           <label for="ssid">Wifi SSID</label>
           <input type="text" id="ssid" name="ssid" placeholder="Enter your SSID">
@@ -306,7 +341,6 @@
       <input type="radio" name="tabs" id="tab-firmware">
       <label for="tab-firmware">Firmware</label>
       <div class="tabcontent">
-        <p>Version: <span id="firmwareVersion">-</span> (<span id="firmwareBuild">-</span>)</p>
         <form id="updateForm">
           <label for="firmwareFile">Select Firmware File (.bin)</label>
           <input type="file" id="firmwareFile" name="update" accept=".bin" required>
@@ -315,6 +349,8 @@
         </form>
       </div>
     </div>
+    <footer><a href="https://t0mg.github.io/esp32-minitv">ESP32-MiniTV</a>&nbsp;v<span id="firmwareVersion">-</span>
+      (<span id="firmwareBuild">-</span>)</footer>
   </div>
 
   <script src="app.js"></script>

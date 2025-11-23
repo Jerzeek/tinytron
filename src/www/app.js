@@ -127,16 +127,32 @@ updateForm.addEventListener('submit', (event) => {
 });
 
 
-// Function to fetch and display battery voltage
-function fetchBatteryVoltage() {
-  fetch('/voltage')
+// Function to fetch and display battery status
+function fetchBatteryStatus() {
+  const batteryLevelDisplay = document.getElementById('batteryLevelDisplay');
+  const batteryChargingDisplay = document.getElementById('batteryChargingDisplay');
+
+  fetch('/battery')
     .then(response => response.json())
     .then(data => {
-      if (data && data.voltage !== undefined) {
-        batteryVoltageDisplay.textContent = data.voltage.toFixed(2);
+      if (data) {
+        if (data.voltage !== undefined) {
+          batteryVoltageDisplay.textContent = data.voltage.toFixed(2);
+        }
+        if (data.level !== undefined) {
+          let batteryIcon = '🟥';
+          batteryIcon += data.level > 20 ? '🟧' : '⬛';
+          batteryIcon += data.level > 60 ? '🟨' : '⬛';
+          batteryIcon += data.level > 80 ? '🟩' : '⬛';
+          batteryLevelDisplay.textContent = `${batteryIcon} ${data.level}%`;
+        }
+        if (data.charging !== undefined) {
+          batteryChargingDisplay.textContent = data.charging ? '⚡' : '';
+        }
+        document.querySelector('.lowBatt').style.display = data.low ? '' : 'none';
       }
     })
-    .catch(error => console.error('Error fetching battery voltage:', error));
+    .catch(error => console.error('Error fetching battery status:', error));
 }
 
 // WebSocket connection
@@ -297,8 +313,8 @@ scalingModeSelect.onchange = (e) => {
 window.onload = async () => {
   const success = await fetchSettings();
   if (success) {
-    fetchBatteryVoltage();
-    setInterval(fetchBatteryVoltage, 60000);
+    fetchBatteryStatus();
+    setInterval(fetchBatteryStatus, 10000);
   }
   if (!success || apMode) {
     streamingTabLabel.style.display = 'none';

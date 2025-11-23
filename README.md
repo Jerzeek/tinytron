@@ -60,15 +60,15 @@ The case was only tested with Prusa MK4S and PLA. It prints with 0.28mm layers i
 | Bezel | Flat side | None |
 | Button | Top side | None |
 
-### Assembly instructions
+## Assembly instructions
 
 Assembly only takes a few minutes. You'll need a drop of plastic glue or cyanoacrylate glue, a bit of elecrical tape, a soldering iron and flush cutter pliers.
 
-#### 1. Solder the header on the SD card breakout board
+### 1. Solder the header on the SD card breakout board
 
 Solder the 6 pin header to the SD breakout board. Trim the pins underneath.
 
-#### 2. Prepare the SPI cable
+### 2. Prepare the SPI cable
 
 The ESP32 dev board comes with a cable that breaks out some IO. We need to cut some of the wires to save room, and use the rest to connect the SD card reader.
 
@@ -104,29 +104,32 @@ Then wrap a bit of electrical tape around the male pins in order to create a mak
 
 **⚠️ Warning:** Be very careful never to plug your home made connector the wrong way: you'd swap the Ground and 3v3 lines and and most likely damage the hardware.
 
-#### 3. Glue the bezel
+### 3. Glue the bezel
 
 The first step is to glue the bezel on the front piece. If you aren't confident that you can one shot the align,ent, use a piece of painter tape as a hinge to align the two pices, then open it, add some cyanoacrylate or plastic glue, and snap it back in pace.
 
-#### 4. Assemble the device
+### 4. Assemble the device
 
 The rest of the assembly requires no glue nor any tool and takes about 3 minutes, but please **DO READ THE ADVICE BELOW VERY CAREFULLY BEFORE PROCEEDING**.
 
 **⚠️ Warning:** The tolerances are very tight, **be gentle when manipulating the display or you might break it** (trust me, I know). Watch the video and respect the insertion order of the display. 
 
-There are 3 points to be pay attention to:
+Assembly is quick, but there are 4 points to be pay attention to:
 
 1. First, hold the case vertically and make sure the push button piece is at its lowest position when inserting the display. **Do not force if the button blocks the display!**
 2. Then, be very gentle when snapping the display in its final position (use the flex of the case rather than the flex of the display, as it turns out it doesn't have any). Make sure the USB-C port is properly aligned.
-3. Perhaps most importantly, when closing the back, also pay attention to which side to insert first and be careful not to pinch the battery. If you did, it could catch on fire.
+3. Pay attention to plug the SPI cable to the SD card reader with the blue cable on the left or you'll fry the board.
+4. Perhaps most importantly, when closing the back, also pay attention to which side to insert first and be careful not to pinch the battery. If you did, it could catch on fire.
 
-<p class="mdOnly">See the 3mn uncut <a href="https://www.youtube.com/watch?v=-QKKTKMmSjw">assembly video on YouTube</a></p>
+<p class="mdOnly">Watch the 3mn uncut assembly video on YouTube</p>
 
-<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/-QKKTKMmSjw?si=rzl6flUuzmrs8cqQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+https://www.youtube.com/watch?v=-QKKTKMmSjw
 
-✨ Congratulations, youre Tinytron is ready! ✨
+✨ Congratulations, your Tinytron is ready! ✨
 
-Note: In case you need to reopen the case, look for the small notch (left side when facing the display), instert a flathead screwdriver and gently twist it. The case should snap back open. In my experience - and it depends on the filament used - it's rather difficult to open it without a tool (which was kind of intentional).
+#### Reopening the case
+
+In case you need to reopen the case, look for the small notch (left side when facing the display), insert a flathead screwdriver and gently twist it. The case should snap back open. In my experience - and it depends on the filament used - it's rather difficult to open it with bare hands.
 
 ## ⚡ Flashing the firmware
 

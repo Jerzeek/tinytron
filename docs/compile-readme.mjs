@@ -30,7 +30,19 @@ marked.use({ renderer });
 
 try {
     // 1. Read the Markdown content
-    const markdown = fs.readFileSync(inputPath, 'utf8');
+    let markdown = fs.readFileSync(inputPath, 'utf8');
+
+    // Replace YouTube URLs with video embeds
+    const youtubeRegex = /^(https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w-]+).*)$/gm;
+    markdown = markdown.replace(youtubeRegex, (match, url, videoId) => {
+        return `<div class="yt"><iframe
+            src="https://www.youtube-nocookie.com/embed/${videoId}" 
+            title="YouTube video player" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            referrerpolicy="strict-origin-when-cross-origin" 
+            allowfullscreen></iframe></div>`;
+    });
 
     // 2. Generate TOC from headings
     const tocHeadings = marked.lexer(markdown).filter(token => token.type === 'heading' && (token.depth === 2 || token.depth === 3));

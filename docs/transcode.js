@@ -10,12 +10,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadLink = document.getElementById('downloadLink');
 
     let ffmpeg;
+    let detectedFps = 30;
 
     const loadFFmpeg = async () => {
         transcodeStatus.textContent = 'Loading ffmpeg-core.js';
         ffmpeg = new FFmpeg();
         ffmpeg.on('log', ({ message }) => {
             console.log(message);
+            // Look for a pattern like " 30 fps," or " 23.98 fps,"
+            const fpsMatch = message.match(/,\s*(\d+(?:\.\d+)?)\s*fps/);
+            if (fpsMatch && fpsMatch[1]) {
+              detectedFps = parseFloat(fpsMatch[1]);
+            }
         });
         ffmpeg.on('progress', ({ progress, time }) => {
             transcodeProgress.value = progress * 100;
@@ -43,9 +49,15 @@ document.addEventListener('DOMContentLoaded', () => {
         transcodeProgress.style.display = 'block';
         transcodeProgress.value = 0;
         downloadLink.style.display = 'none';
-        transcodeStatus.textContent = 'Transcoding...';
+        transcodeStatus.textContent = 'Detecting source framerate...';
 
         await ffmpeg.writeFile('input.mp4', new Uint8Array(await file.arrayBuffer()));
+        await ffmpeg.run('-i', 'input.mp4');
+
+        transcodeVideoFile.disabled = true;
+        transcodeStatus.textContent += '\nFound ' + detectedFps;
+        const targetFps = Math.min(detectedFps, 25);
+        transcodeStatus.textContent += '\nTranscoding video at ' + targetFps + ' FPS...';
 
         const command = [
             '-y',
@@ -57,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '-q:v',
             '10',
             '-vf',
-            'scale=-1:240:flags=lanczos,crop=288:240:(in_w-288)/2:0,fps=min(25, original_fps)',
+            `scale=-1:240:flags=lanczos,crop=288:240:(in_w-288)/2:0,fps=${targetFps}`,
             'out.avi'
         ];
 
@@ -70,7 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadLink.href = url;
         downloadLink.download = 'out.avi';
         downloadLink.style.display = 'block';
-        transcodeStatus.textContent = 'Transcoding complete!';
+        transcodeStatus.textContent += '\nTranscoding complete!';
+        transcodeVideoFile.disabled = false;
         transcodeButton.disabled = false;
         transcodeProgress.style.display = 'none';
     });

@@ -134,7 +134,7 @@ void loop()
       videoPlayer->stop();
     }
     display.fillScreen(TFT_BLACK);
-    display.drawOSD("Going to sleep\nGood bye!", CENTER, STANDARD);
+    display.drawOSD("Time out!", CENTER, STANDARD);
     display.flushSprite();
     delay(5000);
     button.powerOff();

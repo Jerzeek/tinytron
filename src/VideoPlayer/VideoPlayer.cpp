@@ -107,6 +107,9 @@ void VideoPlayer::pause()
   {
     return;
   }
+  char batText[10];
+  sprintf(batText, "Batt. %d%%", mBattery.getBatteryLevel());
+  mDisplay.drawOSD(batText, BOTTOM_RIGHT, OSDLevel::STANDARD);
   drawOSDTimed("Paused", CENTER, OSDLevel::STANDARD);
   mState = VideoPlayerState::PAUSED;
   mVideoSource->setState(VideoPlayerState::PAUSED);

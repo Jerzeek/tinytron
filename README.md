@@ -4,19 +4,21 @@
 
 Tinytron is an ESP32 powered video player with a 1.69 inch display, designed specifically around the [ESP32-S3-LCD-1.69 from Waveshare](https://www.waveshare.com/wiki/ESP32-S3-LCD-1.69). 
 
-It can play MJPEG AVI files from an SD card, or stream video content from a computer over WiFi. It features a simple web interface for configuration and can be controlled with a single physical button.
+It can play MJPEG files from a microSD card, or stream video content from a computer over WiFi. It runs on battery, features a web interface with Wifi access point mode for configuration, and can be controlled with a single physical button.
+
+<p class="flex"><img src="assets/tinytron.gif" title="Playing from SD card (WING IT! by Blender Studio, CC BY 4.0)"><img src="assets/side.jpg" style="max-height:320px" title="Close up mqcro shot, side view"></p>
 
 ### Project goals
 
-There are plenty of great ESP32 TV projects around ([credits](#-credits-and-references) name a few). Tinytron is my attempt at building on their shoulders to make one that's polished yet very easy to build:
+There are plenty of great ESP32 TV projects around ([credits](#-credits-and-references) name a few). Tinytron is my attempt at standing on their shoulders to make one that's very easy to build and use:
 
-- Limited parts: only the dev board, SD card reader and battery, for a total cost of 30€ or less.
-- Minimal soldering: only a 6 pin header to solder.
+- Limited parts: only the dev board, SD card reader and battery, for a total cost of 30€ or less. But it can even work with just the dev board.
+- Minimal soldering: only a single 6 pin header to solder.
 - Custom case: the 4 elements of the case print in 30 minutes on a Prusa MK4S.
 - Quick assembly: snap fits together, takes about 5 minutes.
-- No software to install: both flashing the firmware and converting video files can be done directly from this web page.
+- No software to install: both [flashing](#web-flasher) the firmware and [converting video files](https://t0mg.github.io/tinytron/transcode.html) can be done directly from a web browser.
 
-Note: given these goals, I chose not to support audio playback in this project.
+Note: with these goals in mind, I chose not to support audio playback in this project.
 
 ### Additional features
 
@@ -31,7 +33,7 @@ I sourced parts from Aliexpress and Amazon, and designed the case around them.
 
 ### Bill of Materials
 
-One of this project's goals is to keep the BOM as short as possible. Only 3 parts, and 6 easy solder joints are needed. There is no audio amp nor speaker in this project.
+One of Tinytron's goals is to keep the BOM as short as possible. Only 3 parts, and 6 easy solder joints are needed. There is no audio amp nor speaker in this project.
 
 | Part | Notes | Link (non affiliated) |
 | -- | -- | -- |
@@ -44,7 +46,7 @@ One of this project's goals is to keep the BOM as short as possible. Only 3 part
 
 The case design is inspired by late 90's TV/VCR combos like the Sony KV-14V6D. It was made with OnShape and has 4 parts: front, back, bezel and button. Glue is required to stick the bezel to the front part, the rest of the assembly snap fits (with pretty tight tolerances). Printing the parts separately allows for interesting color combinations.
 
-<p class="flex"><img src="assets/cad.png" title="Assembled case"><img src="assets/exploded.png" title="Exploded case"></p>
+<p class="flex"><img src="assets/cad.png" style="max-height:330px" title="Assembled case"><img src="assets/exploded.png" style="max-height:330px" title="Exploded case"></p>
 
 #### Printing instructions
 
@@ -59,7 +61,7 @@ The case was only tested with Prusa MK4S and PLA. It prints with 0.28mm layers i
 | Bezel | Flat side | None |
 | Button | Top side | None |
 
-<p class="flex"><img src="assets/slicer-top.png" title="Parts in PrusaSlicer, top view"><img src="assets/slicer-bottom.png" title="Parts in PrusaSlicer, bottom view"></p>
+<p class="flex"><img src="assets/slicer-top.png" style="max-height:330px" title="Parts in PrusaSlicer, top view"><img src="assets/slicer-bottom.png" style="max-height:330px" title="Parts in PrusaSlicer, bottom view"></p>
 
 ## 🪛 Assembly instructions
 
@@ -125,8 +127,7 @@ Assembly is quick, but there are 4 points to be pay attention to:
 <p class="mdOnly">Watch the 3mn uncut assembly video on YouTube</p>
 
 https://www.youtube.com/watch?v=-QKKTKMmSjw
-
-
+<br>
 ✨ Congratulations, your Tinytron is ready! ✨
 
 #### Reopening the case

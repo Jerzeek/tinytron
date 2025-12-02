@@ -82,10 +82,10 @@ settingsForm.addEventListener('submit', (event) => {
     if (apMode) {
       clearInterval(batteryInterval);
       networkMessage += `
-      <p>If successful, the "Tinytron" wifi network will disappear and the device will
-      will show "WiFi Connected" alonside its new IP address.</p>
+      <p>If successful, the "Tinytron" wifi network will disappear and the device
+      will show "WiFi Connected" alongside a new IP address.</p>
       <p>You can then reconnect via your home network (${settings.ssid}) and access the 
-      device\'s new IP.</p>`;
+      device via its new IP.</p>`;
     }
     networkMessage += `<p>Please wait about 20 seconds for the device to restart.
     If the connection fails, the device will revert to Access Point mode so you

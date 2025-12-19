@@ -99,8 +99,13 @@ void setup()
     Serial.printf("Wifi Connected: %s\n",
                   wifiManager.getIpAddress().toString().c_str());
     display.fillScreen(TFT_BLACK);
-    display.drawOSD(wifiManager.isAPMode() ? "AP: " AP_SSID : "WiFi Connected",
-                    TOP_LEFT, STANDARD);
+    String ssid_display = "WiFi Connected";
+    if (wifiManager.isAPMode())
+    {
+      ssid_display = "AP: " + wifiManager.getApSsid();
+      display.drawOSD("Connect to set up", BOTTOM_LEFT, STANDARD);
+    }
+    display.drawOSD(ssid_display.c_str(), TOP_LEFT, STANDARD);
     display.drawOSD(wifiManager.getIpAddress().toString().c_str(), CENTER,
                     STANDARD);
     display.flushSprite();

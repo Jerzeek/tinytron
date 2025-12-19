@@ -69,11 +69,13 @@ public:
   bool isAPMode();
   void handleClient();
   IPAddress getIpAddress();
+  String getApSsid();
 
 private:
   static const char *PARAM_INPUT_1;
   static const char *PARAM_INPUT_2;
 
+  String _apSsid;
   Prefs *prefs;
   Battery *_battery;
 

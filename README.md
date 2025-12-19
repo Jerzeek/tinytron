@@ -253,7 +253,7 @@ If no SD card is detected, the device enters WiFi mode. It will attempt to conne
 
 If the device fails to connect to a previously configured WiFi network (or if no network is configured), it will start in Access Point (AP) mode.
 
-- The device will create a WiFi network with the SSID `Tinytron`.
+- The device will create a WiFi network with the SSID `Tinytron-XXXX` (the value of `XXXX` is specific to your device).
 - This network is open and does not require a password.
 - Connect to this network from your computer or phone, and you should be presented with a captive portal that opens the web interface. If not, open a browser and navigate to `192.168.4.1`.
 - From the web interface, you can configure the device to connect to your local WiFi network by specifying its SSID and password. Upon saving, the device will reboot and attempt to connect. You'll then need to connect to your home network to use [Wifi Mode](#wifi-mode). If it fails to connect, it'll return to AP mode after a few seconds.

@@ -9,7 +9,7 @@
 // Inspired by https://randomnerdtutorials.com/esp32-wi-fi-manager-asyncwebserver/
 
 WifiManager::WifiManager(AsyncWebServer *server, Prefs *prefs, Battery *battery)
-    : server(server), prefs(prefs), _battery(battery), subnet(255, 255, 0, 0), previousMillis(0) {}
+    : server(server), prefs(prefs), _battery(battery), subnet(255, 255, 0, 0), previousMillis(0), _apSsid("") {}
 
 void WifiManager::begin()
 {
@@ -176,7 +176,12 @@ void WifiManager::setupAccessPoint()
   Serial.println("Setting AP (Access Point)");
   WiFi.disconnect();
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(AP_SSID, NULL);
+
+  String mac = WiFi.macAddress();
+  mac.replace(":", "");
+  _apSsid = "Tinytron-" + mac.substring(mac.length() - 4);
+
+  WiFi.softAP(_apSsid.c_str(), NULL);
 
   IPAddress IP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
@@ -218,6 +223,11 @@ IPAddress WifiManager::getIpAddress()
     return IPAddress(0, 0, 0, 0);
   }
   return WiFi.localIP();
+}
+
+String WifiManager::getApSsid()
+{
+  return _apSsid;
 }
 
 void WifiManager::handleClient()

@@ -19,7 +19,7 @@ Display::Display(Prefs *prefs) : tft(new TFT_eSPI()), _prefs(prefs)
   frameSprite = new TFT_eSprite(tft);
   frameSprite->createSprite(tft->width(), tft->height());
   frameSprite->setTextFont(2);
-  frameSprite->setTextSize(2);
+  frameSprite->setTextSize(1);
 
 // setup the backlight
 #ifdef TFT_BL
@@ -33,7 +33,7 @@ Display::Display(Prefs *prefs) : tft(new TFT_eSPI()), _prefs(prefs)
 #endif
   tft->fillScreen(TFT_BLACK);
   tft->setTextFont(2);
-  tft->setTextSize(2);
+  tft->setTextSize(1);
   tft->setTextColor(TFT_GREEN, TFT_BLACK);
 }
 

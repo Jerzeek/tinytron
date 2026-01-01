@@ -37,6 +37,8 @@ unsigned long shutdown_time = 0;
 WifiManager wifiManager(&server, &prefs, &battery);
 bool wifiManagerActive = false;
 
+
+
 enum class PlaybackMode
 {
   VIDEO_ONLY,
@@ -61,6 +63,9 @@ void setShutdownTime(int minutes)
 
 void setup()
 {
+  pinMode(21, OUTPUT);
+  digitalWrite(21, HIGH);
+
   display.fillScreen(TFT_BLACK);
   Serial.begin(115200);
   delay(500); // Wait for serial to initialize

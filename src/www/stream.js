@@ -53,8 +53,8 @@ class Streamer {
       return;
     }
     const canvas = document.createElement('canvas');
-    canvas.width = 288;
-    canvas.height = 240;
+    canvas.width = 240;
+    canvas.height = 135;
     const context = canvas.getContext('2d');
     const videoAspectRatio = this.video.videoWidth / this.video.videoHeight;
     const canvasAspectRatio = canvas.width / canvas.height;

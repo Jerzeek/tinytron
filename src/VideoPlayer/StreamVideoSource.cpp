@@ -40,12 +40,25 @@ bool StreamVideoSource::getVideoFrame(uint8_t **buffer, size_t &bufferLength, si
     // reallocate the image buffer if necessary
     if (receivedJpeg.jpeg_len > bufferLength)
     {
-      *buffer = (uint8_t *)realloc(*buffer, receivedJpeg.jpeg_len);
+      uint8_t *newBuffer = (uint8_t *)realloc(*buffer, receivedJpeg.jpeg_len);
+      if (newBuffer == NULL)
+      {
+        Serial.println("StreamVideoSource: realloc failed");
+        free(receivedJpeg.jpeg_data);
+        return false;
+      }
+      *buffer = newBuffer;
       bufferLength = receivedJpeg.jpeg_len;
     }
     // copy the image buffer
-    memcpy(*buffer, receivedJpeg.jpeg_data, receivedJpeg.jpeg_len);
-    frameLength = receivedJpeg.jpeg_len;
+    if (*buffer != NULL) {
+        memcpy(*buffer, receivedJpeg.jpeg_data, receivedJpeg.jpeg_len);
+        frameLength = receivedJpeg.jpeg_len;
+    } else {
+        Serial.println("StreamVideoSource: buffer is NULL");
+        free(receivedJpeg.jpeg_data);
+        return false;
+    }
     // free the memory that was allocated in the websocket handler
     free(receivedJpeg.jpeg_data);
 
@@ -183,7 +196,7 @@ void StreamVideoSource::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *
       }
 
       // IMPORTANT: Clear the buffer to be ready for the next image
-      mJpegBuffer.clear();
+      std::vector<uint8_t>().swap(mJpegBuffer);
       mCurrentWsFrameLength = 0;
     }
   }

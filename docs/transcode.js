@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         '-an',
         '-c:v', 'mjpeg',
         '-q:v', '10',
-        '-vf', `scale=-1:240:flags=lanczos,crop=288:240:(in_w-288)/2:0,fps=${targetFps}`,
+        '-vf', `scale=-1:240:flags=lanczos,crop=320:240:(in_w-320)/2:0,fps=${targetFps}`,
         'out.avi'
       ];
 

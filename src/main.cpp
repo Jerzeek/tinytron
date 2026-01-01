@@ -90,7 +90,7 @@ void setup()
 
   Serial.println("Looking for SD Card");
   SDCard *card =
-      new SDCard(SD_CARD_MISO, SD_CARD_MOSI, SD_CARD_CLK, SD_CARD_CS);
+      new SDCard((gpio_num_t)SD_CARD_MISO, (gpio_num_t)SD_CARD_MOSI, (gpio_num_t)SD_CARD_CLK, (gpio_num_t)SD_CARD_CS);
   // check that the SD Card has mounted properly
   if (!card->isMounted())
   {

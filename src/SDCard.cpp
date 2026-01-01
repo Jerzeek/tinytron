@@ -70,6 +70,9 @@ SDCard::SDCard(gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0, gpio_num_t d1, gpi
 
 SDCard::SDCard(gpio_num_t miso, gpio_num_t mosi, gpio_num_t clk, gpio_num_t cs)
 {
+  if (mosi == GPIO_NUM_23) {
+      m_host.slot = SPI3_HOST;
+  }
   m_host.max_freq_khz = SDMMC_FREQ_DEFAULT; // A faster speed can be used if your card supports it
   esp_err_t ret;
   // Options for mounting the filesystem.
